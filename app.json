@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "ER-Sync",
+    "slug": "ersync-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.ersync.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "현장 음성 브리핑을 녹음하기 위해 마이크가 필요합니다."
+      }
+    },
+    "android": {
+      "package": "com.ersync.app",
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "현장 음성 브리핑을 녹음하기 위해 마이크가 필요합니다."
+        }
+      ],
+      "expo-status-bar",
+      "expo-asset"
+    ]
+  }
+}
