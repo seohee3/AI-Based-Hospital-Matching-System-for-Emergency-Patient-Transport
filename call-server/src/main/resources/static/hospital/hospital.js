@@ -1,23 +1,23 @@
 const $ = id => document.getElementById(id);
-const select = $('hospital');
+let key = '', hospitalName = '';
 const dialog = $('popup');
 const labels = {PENDING:'응답 대기', ACCEPTED:'수용 확정', DECLINED:'수용 불가', CANCELLED:'구급대원 호출 취소', CLOSED_BY_CONFIRMATION:'타 병원 확정으로 호출 종료'};
 let rows = [], selected = null, seen = new Set(), busy = false, version = 0;
-let preferred = new URLSearchParams(location.search).get('hpid') || '';
+
 function element(tag,text) {
   const node = document.createElement(tag);
   node.textContent = text;
   return node;
 }
 async function json(url, options) {
-  const res = await fetch(url,{cache:'no-store',...options});
-  if (!res.ok && !(options?.method === 'POST' && res.status === 409)) throw Error();
-  return res.json();
+  const res = await fetch(url,{cache:'no-store',...options,headers:{...options?.headers,Authorization:'Bearer '+key}});
+  if (!res.ok && !(options?.method === 'POST' && res.status === 409)) throw Object.assign(Error(), {status:res.status});
+  return res.status === 204 || res.status === 409 ? null : res.json();
 }
 function show(record) {
   selected = record.id;
   const r = record.report;
-  $('hospitalName').textContent = select.selectedOptions[0].text;
+  $('hospitalName').textContent = hospitalName;
   $('patient').textContent = [r.patient,r.symptoms].filter(Boolean).join(' · ') || '환자 보고서';
   $('status').className = record.status;
   $('status').textContent = record.status === 'PENDING' ? '응급 환자 호출 · KTAS ' + r.ktas : labels[record.status];
@@ -51,7 +51,7 @@ function renderList(id,list,empty) {
   }
 }
 function render() {
-  $('activeHospital').textContent = select.value ? select.selectedOptions[0].text + ' · ' : '';
+  $('activeHospital').textContent = hospitalName ? hospitalName + ' · ' : '';
   $('date').textContent = new Date().toLocaleDateString('sv-SE');
   const pending = rows.filter(r=>r.status==='PENDING');
   const today = new Date().toDateString();
@@ -75,19 +75,41 @@ function render() {
 async function refresh() {
   const revision=++version;
   try {
-    const hospitals=await json('/api/hospitals');
-    if(revision!==version)return;
-    for(const h of hospitals) if(!Array.from(select.options).some(o=>o.value===h.hpid)) select.add(new Option(h.name,h.hpid));
-    if(preferred && Array.from(select.options).some(o=>o.value===preferred)){select.value=preferred;preferred='';}
-    const id=select.value;
-    const result=id ? await json('/api/hospitals/'+encodeURIComponent(id)+'/requests') : [];
+    const result=await json('/api/hospitals/me/requests');
     if(revision!==version)return;
     rows=result; render();
-    $('notice').textContent=id?'':(hospitals.length?'조회할 병원을 선택하세요.':'첫 호출이 들어오면 후보 병원을 선택할 수 있습니다.');
-  } catch {if(revision===version)$('notice').textContent='연결을 확인 중입니다. 잠시 후 다시 조회합니다.';}
+    $('notice').textContent='';
+  } catch (error) {
+    if(revision!==version)return;
+    if(error.status===401) signOut();
+    $('notice').textContent=error.status===401?'병원 접근 키를 다시 입력해 주세요.':'연결을 확인 중입니다. 잠시 후 다시 조회합니다.';
+  }
 }
-async function poll(){await refresh();setTimeout(poll,1500);}
-select.onchange=()=>{$('closedCall').hidden=true;preferred='';rows=[];seen.clear();selected=null;render();refresh();};
+function signOut() {
+  version++; key=''; hospitalName=''; rows=[]; seen.clear(); selected=null;
+  if(dialog.open)dialog.close();
+  $('patient').textContent=''; $('fields').replaceChildren(); $('notes').textContent='';
+  $('facilities').textContent=''; $('closedCall').textContent=''; $('closedCall').hidden=true;
+  $('login').hidden=false; $('logout').hidden=true; $('notice').textContent='';
+  render();
+}
+$('login').onsubmit=async event=>{
+  event.preventDefault();
+  const revision=++version;
+  key=$('accessKey').value.trim();
+  $('accessKey').value='';
+  try {
+    const identity=await json('/api/hospitals/me');
+    if(revision!==version)return;
+    hospitalName=identity.name; $('login').hidden=true; $('logout').hidden=false;
+    await refresh();
+  } catch(error) {
+    if(revision!==version)return;
+    signOut(); $('notice').textContent=error.status===401?'병원 접근 키를 확인해 주세요.':'서버 연결을 확인해 주세요.';
+  }
+};
+$('logout').onclick=signOut;
+async function poll(){if(hospitalName)await refresh();setTimeout(poll,1500);}
 $('alerts').onclick=()=>{
   const enabled=$('alerts').getAttribute('aria-pressed')!=='true';
   $('alerts').setAttribute('aria-pressed',String(enabled));
@@ -99,11 +121,11 @@ dialog.onclose=()=>{if(selected)seen.add(selected);selected=null;};
 $('actions').onclick=async event=>{
   const decision=event.target.dataset.decision;
   if(busy || !decision || !selected)return;
-  const id=selected, hospital=select.value;
+  const id=selected;
   busy=true;
   for(const b of $('actions').children)b.disabled=true;
   try {
-    await json('/api/calls/'+encodeURIComponent(id)+'/hospitals/'+encodeURIComponent(hospital)+'/response',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision})});
+    await json('/api/hospitals/me/requests/'+encodeURIComponent(id)+'/response',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision})});
   } catch { $('feedback').textContent='응답 전송을 확인하지 못했습니다. 현재 상태를 확인하고 다시 시도하세요.'; }
   finally {busy=false;await refresh();for(const b of $('actions').children)b.disabled=false;}
 };

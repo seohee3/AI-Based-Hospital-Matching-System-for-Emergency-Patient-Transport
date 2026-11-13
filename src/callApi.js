@@ -1,3 +1,21 @@
+let ambulanceKey = '';
+
+export async function signInToCalls(key) {
+  const url = process.env.EXPO_PUBLIC_CALL_URL;
+  if (!url) throw new Error('C 서버 주소를 설정해 주세요.');
+  const result = await fetch(url + '/access', { headers: { Authorization: 'Bearer ' + key } });
+  if (!result.ok) throw new Error(result.status === 401 ? '구급대원 접근 키를 확인해 주세요.' : 'C 서버 연결을 확인해 주세요.');
+  ambulanceKey = key;
+}
+
+export function clearCallAccess() {
+  ambulanceKey = '';
+}
+
+function callFetch(url, options = {}) {
+  return fetch(url, { ...options, headers: { ...options.headers, Authorization: 'Bearer ' + ambulanceKey } });
+}
+
 // Keep the exact payload and key until the create + detail sequence succeeds.
 export function prepareCall(report, match) {
   return {
@@ -11,7 +29,7 @@ export async function loadCreatedCall(submission, signal) {
   const url = process.env.EXPO_PUBLIC_CALL_URL;
   if (!url) throw new Error('C 서버 주소(EXPO_PUBLIC_CALL_URL)를 설정해 주세요.');
   if (!submission.callId) {
-    const response = await fetch(url, {
+    const response = await callFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Idempotency-Key': submission.key },
       body: JSON.stringify(submission.body),
@@ -30,7 +48,7 @@ export async function loadCreatedCall(submission, signal) {
 }
 
 export async function fetchCallDetail(id, signal) {
-  const response = await fetch(process.env.EXPO_PUBLIC_CALL_URL + '/' + encodeURIComponent(id), { signal });
+  const response = await callFetch(process.env.EXPO_PUBLIC_CALL_URL + '/' + encodeURIComponent(id), { signal });
   if (!response.ok) throw new Error(`호출 상세 조회 실패 (HTTP ${response.status})`);
   return asCall(await response.json(), id);
 }
@@ -39,7 +57,7 @@ const outcomes = { CONFIRMED: 'confirmed', ALL_DECLINED: 'declined', CANCELLED: 
 
 export async function fetchHistory(cursor, signal) {
   const query = '?status=terminal' + (cursor ? '&cursor=' + encodeURIComponent(cursor) : '');
-  const response = await fetch(process.env.EXPO_PUBLIC_CALL_URL + query, { signal });
+  const response = await callFetch(process.env.EXPO_PUBLIC_CALL_URL + query, { signal });
   if (!response.ok) throw new Error(`기록 조회 실패 (HTTP ${response.status})`);
   const page = await response.json();
   return {
@@ -53,7 +71,7 @@ export async function fetchHistory(cursor, signal) {
 
 export async function sendHospitalResponse(id, hpid, response, signal) {
   const url = process.env.EXPO_PUBLIC_CALL_URL + '/' + encodeURIComponent(id);
-  const result = await fetch(url + '/hospitals/' + encodeURIComponent(hpid) + '/response', {
+  const result = await callFetch(url + '/demo/hospitals/' + encodeURIComponent(hpid) + '/response', {
     signal,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -64,7 +82,7 @@ export async function sendHospitalResponse(id, hpid, response, signal) {
 }
 
 export async function cancelCall(id) {
-  const result = await fetch(process.env.EXPO_PUBLIC_CALL_URL + '/' + encodeURIComponent(id) + '/cancel', { method: 'POST' });
+  const result = await callFetch(process.env.EXPO_PUBLIC_CALL_URL + '/' + encodeURIComponent(id) + '/cancel', { method: 'POST' });
   if (!result.ok && result.status !== 409) throw new Error(`호출 취소 실패 (HTTP ${result.status})`);
   return asCall(await result.json(), id);
 }
@@ -79,7 +97,7 @@ export async function retryCall(id) {
     }, 10_000);
   });
   async function request() {
-    const result = await fetch(process.env.EXPO_PUBLIC_CALL_URL + '/' + encodeURIComponent(id) + '/retry', {
+    const result = await callFetch(process.env.EXPO_PUBLIC_CALL_URL + '/' + encodeURIComponent(id) + '/retry', {
       method: 'POST', signal: controller.signal,
     });
     if (!result.ok) throw new Error(`재요청 실패 (HTTP ${result.status})`);

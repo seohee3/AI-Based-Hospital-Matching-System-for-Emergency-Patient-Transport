@@ -9,11 +9,11 @@ import Notes from './src/screens/Notes';
 import CallProgress from './src/screens/CallProgress';
 import { HospitalDemo } from './src/HospitalDemo';
 import History from './src/screens/History';
-import { prepareCall, loadCreatedCall, fetchCallDetail, sendHospitalResponse, cancelCall, retryCall } from './src/callApi';
+import { clearCallAccess, prepareCall, loadCreatedCall, fetchCallDetail, sendHospitalResponse, cancelCall, retryCall } from './src/callApi';
 import { sendHandoff } from './src/handoff';
 import * as Location from 'expo-location';
 
-const hospitalDashboardMode = process.env.EXPO_PUBLIC_HOSPITAL_MODE === 'manual';
+const hospitalDashboardMode = process.env.EXPO_PUBLIC_HOSPITAL_MODE !== 'demo';
 
 export default function App() {
   const [screen, setScreen] = useState('login');
@@ -128,7 +128,7 @@ export default function App() {
   }
 
   function goBack() {
-    if (screen === 'voice') { setDraft(null); setReport(null); setScreen('login'); return true; }
+    if (screen === 'voice') { clearCallAccess(); setUser(null); setDraft(null); setReport(null); setScreen('login'); return true; }
     if (screen === 'review') { setScreen('voice'); return true; }
     if (screen === 'notes') {
       activeMatch.current?.abort();
@@ -206,7 +206,6 @@ export default function App() {
         lon: location.coords.longitude
       };
 
-      console.log("🚀 B파트로 전송할 최종 데이터:", finalPayload);
 
       // 3. B파트 서버로 전송 (본인 컴퓨터의 IPv4 주소로 변경 필수)
       const BACKEND_URL = process.env.EXPO_PUBLIC_MATCH_URL || 'http://172.31.74.154:3000/api/match';

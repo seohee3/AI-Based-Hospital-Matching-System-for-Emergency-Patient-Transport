@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Alert } from 'react-native';
 import { Screen, Box, Btn, s } from '../ui';
 import { C } from '../theme';
+import { signInToCalls } from '../callApi';
 import { login } from '../api';
 
 // A01 로그인
@@ -15,6 +16,7 @@ export default function Login({ onLogin }) {
     setBusy(true);
     try {
       const r = await login(center, empId, pw);
+      await signInToCalls(pw.trim());
       onLogin(r);
     } catch (e) {
       Alert.alert('로그인 실패', e.message);
@@ -37,8 +39,8 @@ export default function Login({ onLogin }) {
       <Box label="사번">
         <TextInput style={s.value} value={empId} onChangeText={setEmpId} autoCapitalize="none" placeholder="사번 입력" />
       </Box>
-      <Box label="비밀번호">
-        <TextInput style={s.value} value={pw} onChangeText={setPw} secureTextEntry placeholder="비밀번호 입력" />
+      <Box label="구급대원 접근 키">
+        <TextInput style={s.value} value={pw} onChangeText={setPw} secureTextEntry placeholder="구급대원 접근 키 입력" />
       </Box>
       <Btn title="로그인" color={C.navy} onPress={submit} loading={busy} />
     </Screen>

@@ -10,9 +10,15 @@ import java.net.URI;
 public class CallController {
     private final CallService calls;
 
-    public CallController(CallService calls) {
+    private final boolean demoEnabled;
+
+    public CallController(CallService calls, @org.springframework.beans.factory.annotation.Value("${CALL_DEMO_ENABLED:false}") boolean demoEnabled) {
         this.calls = calls;
+        this.demoEnabled = demoEnabled;
     }
+
+    @GetMapping("/access")
+    public ResponseEntity<Void> access() { return ResponseEntity.noContent().build(); }
 
     @PostMapping
     public ResponseEntity<JsonNode> create(@RequestHeader("Idempotency-Key") String key,
@@ -47,9 +53,10 @@ public class CallController {
         return calls.detail(callId);
     }
 
-    @PostMapping("/{callId}/hospitals/{hpid}/response")
+    @PostMapping("/{callId}/demo/hospitals/{hpid}/response")
     public ResponseEntity<JsonNode> respond(@PathVariable String callId, @PathVariable String hpid,
                                            @RequestBody JsonNode body) {
+        if (!demoEnabled) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
         var result = calls.respond(callId, hpid, body.path("decision").asText());
         return ResponseEntity.status(result.conflict() ? 409 : 200).body(result.detail());
     }

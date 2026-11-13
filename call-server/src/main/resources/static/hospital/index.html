@@ -8,7 +8,7 @@
 </head>
 <body>
   <main>
-    <div class="toolbar"><strong>ER-Sync</strong><label>병원 선택 <select id="hospital"><option value="">병원을 선택하세요</option></select></label></div>
+    <div class="toolbar"><strong>ER-Sync</strong><form id="login"><label>병원 접근 키 <input id="accessKey" type="password" required autocomplete="off"></label> <button>접속</button></form><button id="logout" hidden>로그아웃</button></div>
     <p id="notice" role="status"></p>
     <p id="closedCall" role="status" hidden></p>
     <section class="panel">
