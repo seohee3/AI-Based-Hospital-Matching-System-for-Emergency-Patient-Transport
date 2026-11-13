@@ -5,6 +5,20 @@ main { max-width:1024px; margin:auto; padding:24px clamp(14px,4vw,48px) 48px }
 .toolbar, header, .patient, .row { display:flex; align-items:center; justify-content:space-between; gap:12px }
 .toolbar { margin-bottom:16px; flex-wrap:wrap; color:var(--navy) }
 .toolbar strong { font-size:21px }
+#login:not([hidden]), #login label { display:flex; align-items:center; gap:8px }
+#login label { min-width:0; color:var(--muted); font-size:14px; font-weight:600; white-space:nowrap }
+#accessKey, #login button, #logout { height:38px; border-radius:8px; font:inherit }
+#accessKey { width:clamp(8rem,18vw,12rem); min-width:0; padding:0 10px; border:1px solid var(--line); background:white; color:var(--ink) }
+#login button, #logout { padding:0 14px; border:1px solid var(--line); font-size:14px; font-weight:600 }
+#login button { border-color:var(--navy); background:var(--navy); color:white }
+#logout { background:white; color:var(--navy) }
+#logout:hover { background:var(--surface); border-color:#9aacca }
+#login button:hover { background:#173c70 }
+#login :focus-visible, #logout:focus-visible { outline:2px solid var(--navy); outline-offset:2px }
+@media(max-width:520px){
+  #login { width:100% }
+  #login label, #accessKey { flex:1 }
+}
 select, button { font:inherit; cursor:pointer; color:inherit }
 select { max-width:65vw; border:1px solid var(--line); border-radius:8px; padding:6px; background:white }
 .panel, dialog { background:white; border:1px solid var(--line); border-radius:12px; overflow:hidden }

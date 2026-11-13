@@ -3,6 +3,7 @@ let key = '', hospitalName = '';
 const dialog = $('popup');
 const labels = {PENDING:'응답 대기', ACCEPTED:'수용 확정', DECLINED:'수용 불가', CANCELLED:'구급대원 호출 취소', CLOSED_BY_CONFIRMATION:'타 병원 확정으로 호출 종료'};
 let rows = [], selected = null, seen = new Set(), busy = false, version = 0;
+let firstSnapshot = true;
 
 function element(tag,text) {
   const node = document.createElement(tag);
@@ -15,6 +16,7 @@ async function json(url, options) {
   return res.status === 204 || res.status === 409 ? null : res.json();
 }
 function show(record) {
+  seen.add(record.id);
   selected = record.id;
   const r = record.report;
   $('hospitalName').textContent = hospitalName;
@@ -67,9 +69,9 @@ function render() {
     $('closedCall').hidden=false;
     dialog.close();
   } else if(dialog.open && current) show(current);
-  else if(!dialog.open && $('alerts').getAttribute('aria-pressed')==='true') {
+  else if(!dialog.open && !busy && $('alerts').getAttribute('aria-pressed')==='true') {
     const incoming=pending.find(r=>!seen.has(r.id));
-    if(incoming){seen.add(incoming.id);$('feedback').textContent='';show(incoming);}
+    if(incoming){$('feedback').textContent='';show(incoming);}
   }
 }
 async function refresh() {
@@ -77,6 +79,12 @@ async function refresh() {
   try {
     const result=await json('/api/hospitals/me/requests');
     if(revision!==version)return;
+    if(firstSnapshot) {
+      // Existing requests stay in the queue. Only the latest call can alert on login.
+      const latest=result.reduce((last,r)=>!last || r.startedAt>last.startedAt ? r : last,null);
+      for(const r of result) if(r.status==='PENDING' && r.id!==latest?.id) seen.add(r.id);
+      firstSnapshot=false;
+    }
     rows=result; render();
     $('notice').textContent='';
   } catch (error) {
@@ -86,6 +94,7 @@ async function refresh() {
   }
 }
 function signOut() {
+  firstSnapshot=true;
   version++; key=''; hospitalName=''; rows=[]; seen.clear(); selected=null;
   if(dialog.open)dialog.close();
   $('patient').textContent=''; $('fields').replaceChildren(); $('notes').textContent='';
@@ -117,7 +126,7 @@ $('alerts').onclick=()=>{
   render();
 };
 $('close').onclick=()=>dialog.close();
-dialog.onclose=()=>{if(selected)seen.add(selected);selected=null;};
+dialog.onclose=()=>{if(!dialog.open)selected=null;};
 $('actions').onclick=async event=>{
   const decision=event.target.dataset.decision;
   if(busy || !decision || !selected)return;

@@ -62,7 +62,7 @@ export async function fetchHistory(cursor, signal) {
   const page = await response.json();
   return {
     records: page.records.map(r => ({
-      id: r.callId, retryOf: r.retryOfCallId, outcome: outcomes[r.status], finishedAt: r.finishedAt,
+      id: r.callId, retryOf: r.retryOfCallId, outcome: outcomes[r.status], startedAt: r.startedAt, finishedAt: r.finishedAt,
       candidateCount: r.candidateCount, winner: r.confirmedHospitalName,
     })),
     nextCursor: page.nextCursor,

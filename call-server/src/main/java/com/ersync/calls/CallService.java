@@ -148,7 +148,7 @@ public class CallService {
         return new Created(detail(identity.id()), created);
     }
 
-    record Summary(String callId, String retryOfCallId, String status, String finishedAt,
+    record Summary(String callId, String retryOfCallId, String status, String startedAt, String finishedAt,
                    int candidateCount, String confirmedHospitalName) {}
     record HistoryPage(List<Summary> records, String nextCursor) {}
 
@@ -156,7 +156,7 @@ public class CallService {
     public HistoryPage history(UUID cursor, int limit) {
         require(limit >= 1 && limit <= 100, "limit must be between 1 and 100");
         String sql = """
-                SELECT c.id, c.retry_of_call_id, c.status, c.finished_at,
+                SELECT c.id, c.retry_of_call_id, c.status, c.started_at, c.finished_at,
                        (SELECT COUNT(*) FROM transport_call_hospital h WHERE h.call_id=c.id) AS candidate_count,
                        w.hospital_snapshot->>'$.dutyName' AS winner
                 FROM transport_call c
@@ -171,7 +171,7 @@ public class CallService {
         args.add(limit + 1);
         var rows = db.query(sql + " ORDER BY c.finished_at DESC,c.id DESC LIMIT ?", (rs, n) ->
                 new Summary(rs.getString("id"), rs.getString("retry_of_call_id"), rs.getString("status"),
-                        instant(rs.getTimestamp("finished_at")), rs.getInt("candidate_count"), rs.getString("winner")),
+                        instant(rs.getTimestamp("started_at")), instant(rs.getTimestamp("finished_at")), rs.getInt("candidate_count"), rs.getString("winner")),
                 args.toArray());
         if (rows.size() <= limit) return new HistoryPage(rows, null);
         return new HistoryPage(rows.subList(0, limit), rows.get(limit - 1).callId());
