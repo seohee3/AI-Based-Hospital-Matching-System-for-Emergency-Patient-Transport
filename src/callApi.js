@@ -100,7 +100,7 @@ function asCall(detail, id) {
   }
   return {
     id: detail.callId, startedAt: Date.parse(detail.startedAt), retryOf: detail.retryOfCallId,
-    serverBacked: true, finishedAt: detail.finishedAt ? Date.parse(detail.finishedAt) : null,
+    finishedAt: detail.finishedAt ? Date.parse(detail.finishedAt) : null,
     outcome: outcomes[detail.status] ?? null,
     report: detail.report, appliedRadiusKm: detail.appliedRadiusKm,
     hospitals: detail.hospitals.map(h => ({

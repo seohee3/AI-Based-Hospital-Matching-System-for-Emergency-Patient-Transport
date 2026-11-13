@@ -6,7 +6,7 @@ import { C } from '../theme';
 import { transcribe, makeReport } from '../api';
 
 // A02 음성 브리핑: 녹음 → (whisper-large-v3-turbo) 텍스트 → (openai/gpt-oss-120b) 보고서 항목
-export default function Voice({ teamName, onDone, onBack, onHistory }) {
+export default function Voice({ teamName, onDone, onBack }) {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [phase, setPhase] = useState('idle'); // idle | recording | transcribing | drafting
   const [transcript, setTranscript] = useState('');
@@ -98,7 +98,6 @@ export default function Voice({ teamName, onDone, onBack, onHistory }) {
       {error ? <Text style={{ color: C.red, fontSize: 13 }}>{error}</Text> : null}
 
       <Btn title="■ 녹음 종료" color={C.navy} disabled={!recording} loading={working} onPress={stop} />
-      {phase === 'idle' && <Btn title="지난 이송 기록" onPress={onHistory} />}
     </Screen>
   );
 }

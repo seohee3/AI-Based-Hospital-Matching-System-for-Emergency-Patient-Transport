@@ -41,13 +41,12 @@ export default function CallProgress({ call, busyAction, syncError, onBack, onCa
   const { report, hospitals, outcome } = call;
   const confirmed = hospitals.find(h => h.status === 'accepted');
   const responses = hospitals.filter(h => h.status === 'accepted' || h.status === 'declined').length;
-  const allDeclined = hospitals.every(h => h.status === 'declined');
 
   if (!outcome) return <ActiveCall key={call.id} call={call} onCancel={onCancel} busyAction={busyAction} syncError={syncError} />;
 
   return (
     <Screen>
-      <Header title={confirmed ? '이송 병원 확정' : outcome ? '호출 종료' : '호출 진행'} onBack={onBack} />
+      <Header title={confirmed ? '이송 병원 확정' : '호출 종료'} onBack={onBack} />
       {confirmed && (
         <Box label="수용 가능 · 확정된 이송 병원">
           <Text style={s.h2}>{confirmed.dutyName}</Text>
@@ -55,7 +54,7 @@ export default function CallProgress({ call, busyAction, syncError, onBack, onCa
           <Text style={s.value}>{confirmed.dutyTel3 || '전화번호 미확인'} · {confirmed.etaMinutes == null ? '예상 시간 미확인' : `예상 ${confirmed.etaMinutes}분`}</Text>
         </Box>
       )}
-      {allDeclined && <Text style={s.h2}>모든 후보 병원이 거절했습니다.</Text>}
+      {outcome === 'declined' && <Text style={s.h2}>모든 후보 병원이 거절했습니다.</Text>}
       {outcome === 'declined' && (
         <Btn title={busyAction === 'retry' ? '재요청 중…' : '기존 후보 병원에 다시 요청'} disabled={!!busyAction} onPress={onRequestAgain} />
       )}
@@ -73,7 +72,7 @@ export default function CallProgress({ call, busyAction, syncError, onBack, onCa
           </Text>
         </Box>
       ))}
-      {outcome && <Btn title="지난 이송 기록" disabled={!!busyAction} onPress={onHistory} />}
+      <Btn title="지난 이송 기록" disabled={!!busyAction} onPress={onHistory} />
       <ReportSummary report={report} showNotes />
     </Screen>
   );

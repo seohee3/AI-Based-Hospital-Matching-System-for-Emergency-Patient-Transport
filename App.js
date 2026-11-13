@@ -7,6 +7,7 @@ import Voice from './src/screens/Voice';
 import Review from './src/screens/Review';
 import Notes from './src/screens/Notes';
 import CallProgress from './src/screens/CallProgress';
+import { HospitalDemo } from './src/HospitalDemo';
 import History from './src/screens/History';
 import { prepareCall, loadCreatedCall, sendHospitalResponse, cancelCall, retryCall } from './src/callApi';
 import { sendHandoff } from './src/handoff';
@@ -16,12 +17,10 @@ export default function App() {
   const [screen, setScreen] = useState('login');
   const [call, setCall] = useState(null);
   const currentCall = useRef(null);
-  const originalCallCount = useRef(0);
-  const declineAll = useRef(false);
+  const [hospitalDemo] = useState(() => new HospitalDemo());
   const operation = useRef(null);
   const [busyAction, setBusyAction] = useState(null);
   const [syncError, setSyncError] = useState(false);
-  const [historyFrom, setHistoryFrom] = useState('voice');
   const [matching, setMatching] = useState(false);
   const activeMatch = useRef(null);
   const pendingSubmission = useRef(null);
@@ -33,11 +32,9 @@ export default function App() {
   // The single-device demo plays the hospital side while A06 displays server snapshots.
   useEffect(() => {
     if (screen !== 'callProgress' || !call || call.outcome || busyAction) return;
-    const index = call.hospitals.findIndex(h => h.status === 'pending');
-    if (index < 0) return;
+    const decision = hospitalDemo.nextResponse(call);
+    if (!decision) return;
     let attempt;
-    const winner = Math.min(1, call.hospitals.length - 1);
-    const accept = (call.retryOf || !declineAll.current) && index === winner;
     let stopped = false;
     let timeout;
     let timer;
@@ -46,8 +43,8 @@ export default function App() {
       attempt = new AbortController();
       timeout = setTimeout(() => attempt.abort(), 10000);
       try {
-        const next = await sendHospitalResponse(call.id, call.hospitals[index].hpid,
-          accept ? 'accepted' : 'declined', attempt.signal);
+        const next = await sendHospitalResponse(call.id, decision.hpid,
+          decision.response, attempt.signal);
         if (stopped || operation.current || currentCall.current !== call) return;
         setSyncError(false);
         currentCall.current = next;
@@ -67,7 +64,7 @@ export default function App() {
       clearTimeout(timeout);
       attempt?.abort();
     };
-  }, [call, screen, busyAction]);
+  }, [call, screen, busyAction, hospitalDemo]);
 
   async function cancel(id) {
     if (operation.current || currentCall.current?.id !== id || currentCall.current.outcome) return;
@@ -97,7 +94,6 @@ export default function App() {
 
   function openHistory() {
     if (operation.current) return;
-    setHistoryFrom(screen);
     setScreen('history');
   }
 
@@ -129,7 +125,7 @@ export default function App() {
       setScreen('review');
       return true;
     }
-    if (screen === 'history') { setScreen(historyFrom); return true; }
+    if (screen === 'history') { setScreen('callProgress'); return true; }
     if (screen === 'callProgress') {
       if (operation.current) return true;
       if (!currentCall.current?.outcome) { confirmCancel(); return true; }
@@ -143,7 +139,7 @@ export default function App() {
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', goBack);
     return () => sub.remove();
-  }, [screen, historyFrom]);
+  }, [screen]);
 
   async function handleHandoff(finalReport) {
     if (activeMatch.current) return;
@@ -157,8 +153,7 @@ export default function App() {
       try {
         const next = await loadCreatedCall(submission, request.signal);
         if (request.signal.aborted) return;
-        originalCallCount.current += 1;
-        declineAll.current = originalCallCount.current % 2 === 0;
+        hospitalDemo.startOriginalCall();
         setSyncError(false);
         pendingSubmission.current = null;
         currentCall.current = next;
@@ -246,7 +241,6 @@ export default function App() {
       {screen === 'voice' && (
         <Voice
           teamName={user?.teamName}
-          onHistory={openHistory}
           onBack={goBack}
           onDone={(text, d) => { pendingSubmission.current = null; setDraft(d); setReport(null); setScreen('review'); }}
         />
