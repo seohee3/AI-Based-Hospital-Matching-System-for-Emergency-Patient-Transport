@@ -1,46 +1,23 @@
-# AI-Based-Hospital-Matching-System-for-Emergency-Patient-Transport
-A service that assesses patients’ conditions and checks hospital bed availability, medical staff availability, and surgical capacity, connecting paramedics with hospitals in real time to reduce transport delays.
+# ER-Sync (이알싱크)
 
-# ER-Sync (A01~A04)
+구급대원이 현장 상황을 녹음하면 AI가 환자 보고서 초안을 작성합니다. 대원이 보고서를 검토하고 중증도(KTAS)와 필수 시설을 선택하면, 앱이 조건에 맞는 후보 병원 최대 3곳에 이송을 요청합니다.
 
-119 구급대원 음성 브리핑 → AI 보고서 초안 → KTAS/필수시설 선택 → 병원 매칭 호출까지의 Expo(React Native) 앱입니다.
-이어서 개발할 내용(A05~)은 **HANDOFF.md** 를 먼저 읽어주세요.
+병원은 대시보드에서 자기 병원에 들어온 요청을 수락하거나 거절합니다. 가장 먼저 수락한 병원이 이송 병원으로 확정됩니다. 모든 후보가 거절하면 같은 병원들에 다시 요청할 수 있고, 대원은 ‘지난 이송 기록’에서 최초 호출과 재요청의 보고서·응답 결과를 함께 확인할 수 있습니다.
 
-## 준비물
-- Node.js 22.13 이상 (Expo SDK 57 기준)
-- VS Code
-- 폰에 **Expo Go** 앱 (폰과 PC는 같은 Wi-Fi. 행사장 Wi-Fi가 막히면 폰 핫스팟에 PC 연결)
+## 시연 준비
 
-## 처음 실행 (한 번만)
-1. 이 폴더(`ersync-app`)를 VS Code 로 엽니다. (파일 → 폴더 열기)
-2. 터미널(Ctrl+`)에서:
-   ```
-   npm run setup
-   ```
-   `npm install` 후 Expo SDK 57 에 맞는 패키지 버전으로 자동 정렬합니다. 끝나면 `package.json` 의 `*` 가 실제 버전으로 바뀌고 `package-lock.json` 이 생기니, 두 파일 모두 커밋하세요.
-3. `.env` 에 Groq API 키가 이미 들어 있습니다. (`EXPO_PUBLIC_GROQ_API_KEY`)
-   `.env` 는 `.gitignore` 에 있어서 git 에 올라가지 않습니다. 키가 바뀌면 `.env` 만 고치세요. (형식은 `.env.example` 참고)
+1. 노트북에 Node.js 22.13 이상, Java 17, Maven, MySQL 8을 준비합니다. 폰에는 Expo Go를 설치하고 노트북과 같은 Wi-Fi 또는 핫스팟에 연결합니다.
+2. 프로젝트 폴더에서 `npm ci --legacy-peer-deps`로 패키지를 설치합니다.
+3. [환경 설정 예시](.env.example)를 `.env`로 복사하고 Groq·카카오·응급의료정보 API 키를 입력합니다. 두 서버 URL의 IP를 노트북의 Wi-Fi IPv4 주소로 바꾸고, 병원에서 직접 응답하려면 `EXPO_PUBLIC_HOSPITAL_MODE=manual`로 설정합니다.
 
 ## 실행
-```
-npm start
-```
-뜨는 QR 코드를 폰의 Expo Go 로 스캔하세요. 코드를 바꿨는데 반영이 안 되면 `npm run start:clear`.
-`.env` 를 수정했다면 반드시 `start:clear` 로 다시 시작해야 합니다.
 
-시연 흐름: 로그인(아무 값) → 녹음 → KTAS 선택 → 특이사항 → 병원 매칭 및 호출
+터미널 3개를 열고 시연하는 동안 켜 둡니다.
 
-## 폴더 구조
-```
-App.js                 화면 전환/상태 (login → voice → review → notes)
-index.js               앱 진입점
-src/api.js             Groq 호출 (음성→텍스트, 텍스트→보고서 JSON)
-src/handoff.js         A04 → 다음 단계로 { ktas, requiredFacilities } 전달
-src/constants.js       시설 상수
-src/screens/           Login(A01) Voice(A02) Review(A03) Notes(A04)
-optional-backend/      Spring Boot 버전 (현재 앱에서는 사용 안 함)
-```
+| 터미널 | 실행 방법 |
+| --- | --- |
+| 병원 매칭 서버 | 프로젝트 폴더에서 `node server.js` |
+| 호출 서버 | [호출 서버 설정 안내](call-server/README.md)에 따라 MySQL 연결 정보와 대원·병원 키를 설정합니다. `CALL_SERVER_ADDRESS`를 노트북 IPv4 주소로 지정한 뒤 `call-server` 폴더에서 `mvn spring-boot:run`을 실행합니다. |
+| 구급대원 앱 | 프로젝트 폴더에서 `npx expo start --go --lan` |
 
-## 참고
-- Expo Go 에서 안 되는 네이티브 기능을 쓰게 되면 development build 가 필요합니다.
-- 보안: `EXPO_PUBLIC_` 값은 앱에 포함됩니다. 실서비스는 서버를 거치도록 바꾸세요.
+폰으로 QR을 스캔해 대원 키로 로그인한 뒤 호출을 보냅니다. 노트북에서는 `http://<노트북 IPv4>:8082/hospital/index.html`을 열고 후보 병원의 키로 접속합니다. 병원이 수락·거절하면 폰의 호출 진행 화면에서 결과를 확인할 수 있습니다. 호출 서버 포트를 변경했다면 대시보드 주소와 `EXPO_PUBLIC_CALL_URL`에도 같은 포트를 사용합니다.
