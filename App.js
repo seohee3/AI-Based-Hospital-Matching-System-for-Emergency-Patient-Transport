@@ -97,6 +97,17 @@ export default function App() {
     setScreen('history');
   }
 
+  function startNewBriefing() {
+    if (operation.current || !currentCall.current?.outcome) return;
+    currentCall.current = null;
+    pendingSubmission.current = null;
+    setCall(null);
+    setDraft(null);
+    setReport(null);
+    setSyncError(false);
+    setScreen('voice');
+  }
+
   async function requestAgain(previous) {
     if (currentCall.current !== previous || previous.outcome !== 'declined' || operation.current) return;
     operation.current = 'retry';
@@ -260,7 +271,7 @@ export default function App() {
       )}
       {screen === 'callProgress' && (
         <CallProgress call={call} busyAction={busyAction} syncError={syncError} onBack={goBack}
-          onCancel={confirmCancel} onHistory={openHistory} onRequestAgain={() => requestAgain(call)} />
+          onCancel={confirmCancel} onHistory={openHistory} onNewBriefing={startNewBriefing} onRequestAgain={() => requestAgain(call)} />
       )}
       {screen === 'history' && <History onBack={goBack} />}
     </SafeAreaProvider>

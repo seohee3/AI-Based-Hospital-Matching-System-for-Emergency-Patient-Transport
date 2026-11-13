@@ -37,7 +37,7 @@ function ActiveCall({ call, onCancel, busyAction, syncError }) {
   );
 }
 
-export default function CallProgress({ call, busyAction, syncError, onBack, onCancel, onHistory, onRequestAgain }) {
+export default function CallProgress({ call, busyAction, syncError, onBack, onCancel, onHistory, onNewBriefing, onRequestAgain }) {
   const { report, hospitals, outcome } = call;
   const confirmed = hospitals.find(h => h.status === 'accepted');
   const responses = hospitals.filter(h => h.status === 'accepted' || h.status === 'declined').length;
@@ -59,6 +59,7 @@ export default function CallProgress({ call, busyAction, syncError, onBack, onCa
         <Btn title={busyAction === 'retry' ? '재요청 중…' : '기존 후보 병원에 다시 요청'} disabled={!!busyAction} onPress={onRequestAgain} />
       )}
       {outcome === 'cancelled' && <Text style={s.h2}>호출을 취소했습니다.</Text>}
+      <Btn title="새 브리핑 시작" color={C.navy} disabled={!!busyAction} onPress={onNewBriefing} />
       <Text style={s.value}>
         {call.retryOf ? '재요청 · ' : ''}후보 {hospitals.length}곳 중 {responses}곳 응답 · 탐색 반경 {call.appliedRadiusKm}km
       </Text>
