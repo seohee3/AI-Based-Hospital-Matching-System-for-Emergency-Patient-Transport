@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ER-Sync 병원 호출 현황</title>
+<link rel="stylesheet" href="hospital.css">
+<header><strong>ER-Sync</strong><span>응급실</span><label>병원 선택 <select id="hospital"><option value="">병원을 선택하세요</option></select></label><button id="alerts" aria-pressed="true">알림 ON</button></header>
+<main><h1>실시간 호출 현황</h1><p id="notice" role="status"></p>
+<p id="closedCall" role="status" hidden></p>
+<section class="stats"><div>진행 중<b id="waiting">0건</b></div><div>오늘 수락<b id="accepted">0건</b></div><div>오늘 평균 응답<b id="average">—</b></div></section>
+<h2>응답 대기</h2><div id="queue"></div>
+<h2>호출 이력</h2><div id="history"></div></main>
+<dialog id="popup"><header><strong id="hospitalName"></strong><button id="close" aria-label="닫기">닫기</button></header>
+<article><p id="status"></p><h2 id="patient"></h2><dl id="fields"></dl><p id="feedback" role="status"></p><footer id="actions"><button data-decision="ACCEPT">수용 가능</button><button data-decision="DECLINE">수용 불가</button></footer></article></dialog>
+<script type="module" src="hospital.js"></script></html>

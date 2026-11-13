@@ -9,9 +9,11 @@ import Notes from './src/screens/Notes';
 import CallProgress from './src/screens/CallProgress';
 import { HospitalDemo } from './src/HospitalDemo';
 import History from './src/screens/History';
-import { prepareCall, loadCreatedCall, sendHospitalResponse, cancelCall, retryCall } from './src/callApi';
+import { prepareCall, loadCreatedCall, fetchCallDetail, sendHospitalResponse, cancelCall, retryCall } from './src/callApi';
 import { sendHandoff } from './src/handoff';
 import * as Location from 'expo-location';
+
+const hospitalDashboardMode = process.env.EXPO_PUBLIC_HOSPITAL_MODE === 'manual';
 
 export default function App() {
   const [screen, setScreen] = useState('login');
@@ -32,19 +34,20 @@ export default function App() {
   // The single-device demo plays the hospital side while A06 displays server snapshots.
   useEffect(() => {
     if (screen !== 'callProgress' || !call || call.outcome || busyAction) return;
-    const decision = hospitalDemo.nextResponse(call);
-    if (!decision) return;
+    const decision = hospitalDashboardMode ? null : hospitalDemo.nextResponse(call);
+    if (!hospitalDashboardMode && !decision) return;
     let attempt;
     let stopped = false;
     let timeout;
     let timer;
-    async function simulate() {
+    async function refreshCall() {
       if (operation.current || currentCall.current !== call || stopped) return;
       attempt = new AbortController();
       timeout = setTimeout(() => attempt.abort(), 10000);
       try {
-        const next = await sendHospitalResponse(call.id, decision.hpid,
-          decision.response, attempt.signal);
+        const next = hospitalDashboardMode
+          ? await fetchCallDetail(call.id, attempt.signal)
+          : await sendHospitalResponse(call.id, decision.hpid, decision.response, attempt.signal);
         if (stopped || operation.current || currentCall.current !== call) return;
         setSyncError(false);
         currentCall.current = next;
@@ -52,12 +55,12 @@ export default function App() {
       } catch {
         if (stopped || operation.current || currentCall.current !== call) return;
         setSyncError(true);
-        timer = setTimeout(simulate, 4000);
+        timer = setTimeout(refreshCall, hospitalDashboardMode ? 1500 : 4000);
       } finally {
         clearTimeout(timeout);
       }
     }
-    timer = setTimeout(simulate, 4000);
+    timer = setTimeout(refreshCall, hospitalDashboardMode ? 1500 : 4000);
     return () => {
       stopped = true;
       clearTimeout(timer);

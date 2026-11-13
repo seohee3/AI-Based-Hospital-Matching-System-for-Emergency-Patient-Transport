@@ -37,3 +37,9 @@ Invoke-RestMethod "http://127.0.0.1:8082/api/calls/$($call.callId)" | ConvertTo-
 `POST /api/calls/{callId}/hospitals/{hpid}/response`에 `{"decision":"ACCEPT"}` 또는 `{"decision":"DECLINE"}`을 보낸다.
 처리한 결과와 동일한 응답의 재전송에는 현재 상세와 HTTP 200을 반환한다. 이미 확정된 다른 병원이 수락하는 등 기존 상태와 충돌하면 같은 형태의 현재 상세와 HTTP 409를 반환한다.
 호출 행의 잠금을 먼저 획득한 수락이 확정되며 남은 대기 후보는 종료된다. 모든 후보가 거절하면 호출은 `ALL_DECLINED`가 된다.
+
+## 병원 PC 시연 (H02~H05)
+
+C 서버 실행 후 PC에서 `http://<CALL_SERVER_ADDRESS>:8082/hospital/index.html`을 연다. 앱 폴더의 로컬 `.env`에 `EXPO_PUBLIC_HOSPITAL_MODE=manual`을 설정하고 Expo 앱을 리로드하면 구급대원 화면은 병원의 응답을 기다린다. 한 기기 자동 시연으로 복귀하려면 값을 `demo`로 바꾸고 리로드한다.
+
+앱에서 호출을 생성한 뒤 PC에서 후보 병원을 선택한다. 두 브라우저 탭에서 서로 다른 후보를 선택하면 한 병원의 수락으로 다른 탭의 대기 팝업이 닫히는 것을 확인할 수 있다. 병원별 종료 이력은 같은 페이지 하단에서 조회한다. 병원 선택기는 시연용이며 계정 인증은 제공하지 않는다.
