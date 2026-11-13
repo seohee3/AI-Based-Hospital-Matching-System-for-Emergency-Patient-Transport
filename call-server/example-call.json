@@ -1,0 +1,16 @@
+{
+  "report": {
+    "patient": "시연 환자",
+    "symptoms": "발목 통증",
+    "bp": "",
+    "consciousness": "명료",
+    "ktas": 4,
+    "requiredFacilities": [],
+    "notes": "C 서버 단독 검증"
+  },
+  "appliedRadiusKm": 15,
+  "hospitals": [
+    { "hpid": "DEMO-01", "dutyName": "가상병원 가", "distanceKm": 2.1, "etaMinutes": 8 },
+    { "hpid": "DEMO-02", "dutyName": "가상병원 나", "distanceKm": 3.5, "etaMinutes": null }
+  ]
+}

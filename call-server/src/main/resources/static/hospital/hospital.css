@@ -1,0 +1,59 @@
+:root { --navy:#0b2a5b; --ink:#182536; --muted:#576985; --surface:#f3f6fb; --line:#d6e0ee; --red:#e5384b; --green:#1fa971; }
+* { box-sizing:border-box }
+body { margin:0; background:#eaf0fa; color:var(--ink); font:16px/1.5 system-ui,sans-serif }
+main { max-width:1024px; margin:auto; padding:24px clamp(14px,4vw,48px) 48px }
+.toolbar, header, .patient, .row { display:flex; align-items:center; justify-content:space-between; gap:12px }
+.toolbar { margin-bottom:16px; flex-wrap:wrap; color:var(--navy) }
+.toolbar strong { font-size:21px }
+#login:not([hidden]), #login label { display:flex; align-items:center; gap:8px }
+#login label { min-width:0; color:var(--muted); font-size:14px; font-weight:600; white-space:nowrap }
+#accessKey, #login button, #logout { height:38px; border-radius:8px; font:inherit }
+#accessKey { width:clamp(8rem,18vw,12rem); min-width:0; padding:0 10px; border:1px solid var(--line); background:white; color:var(--ink) }
+#login button, #logout { padding:0 14px; border:1px solid var(--line); font-size:14px; font-weight:600 }
+#login button { border-color:var(--navy); background:var(--navy); color:white }
+#logout { background:white; color:var(--navy) }
+#logout:hover { background:var(--surface); border-color:#9aacca }
+#login button:hover { background:#173c70 }
+#login :focus-visible, #logout:focus-visible { outline:2px solid var(--navy); outline-offset:2px }
+@media(max-width:520px){
+  #login { width:100% }
+  #login label, #accessKey { flex:1 }
+}
+select, button { font:inherit; cursor:pointer; color:inherit }
+select { max-width:65vw; border:1px solid var(--line); border-radius:8px; padding:6px; background:white }
+.panel, dialog { background:white; border:1px solid var(--line); border-radius:12px; overflow:hidden }
+.panel + .panel { margin-top:20px }
+header { background:var(--navy); color:white; padding:12px 18px }
+h1,h2,p,dl,dd { margin:0 }
+h1,h2 { font-size:18px }
+header button { border:1px solid #7386a4; border-radius:6px; padding:3px 9px; background:transparent; color:white }
+.content,article { padding:16px }
+.stats,dl { display:grid; gap:8px }
+.stats { grid-template-columns:repeat(3,1fr); margin-bottom:14px }
+.stats div, dl div, #notes,#facilities { background:var(--surface); border-radius:8px; padding:10px 12px }
+.stats div,dt,small { font-size:13px; color:var(--muted) }
+.stats b { display:block; font-size:26px; color:var(--ink) }
+#waiting { color:var(--red) }
+.row { width:100%; padding:10px 14px; border:1px solid var(--line); background:white; border-radius:9px; text-align:left; font-weight:700 }
+.row + .row { margin-top:7px }
+.row:hover { background:var(--surface) }
+small { display:block; font-weight:500 }
+.badge,#severity { border-radius:2em; background:#eaf0f7; padding:3px 10px; font-size:13px; white-space:nowrap; color:var(--muted) }
+.PENDING { background:#fff0c5; color:#805400 }
+.ACCEPTED { background:#dbf5e7; color:#087143 }
+dialog { padding:0; width:min(550px,94vw); max-height:90vh; overflow:auto; color:var(--ink) }
+dialog::backdrop { background:#15243966 }
+#status { background:#65748d; color:white; font-weight:bold; padding:7px 18px }
+#status.PENDING { background:var(--red) }
+#status.ACCEPTED { background:#147b54 }
+#severity { color:var(--navy); font-weight:bold }
+dl { grid-template-columns:repeat(4,minmax(0,1fr)); margin:12px 0 }
+dd { font-weight:700; overflow-wrap:anywhere }
+#notes,#facilities { margin:8px 0; white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px }
+footer { display:flex; gap:8px; margin-top:12px }
+footer button { flex:1; padding:12px; border-radius:8px; border:1px solid #9aacca; background:white; color:var(--navy); font-weight:700 }
+button[data-decision=ACCEPT] { background:var(--green); color:white; border-color:var(--green) }
+button:disabled { opacity:.55 }
+#closedCall,#notice:not(:empty),#feedback:not(:empty) { margin:10px 0; padding:10px; background:var(--surface); border-radius:8px }
+[hidden],#facilities:empty { display:none }
+@media(max-width:520px){dl{grid-template-columns:1fr 1fr}.content,article{padding:10px}.stats div{padding:8px}}
