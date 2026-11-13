@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ER-Sync 병원 호출 현황</title>
+  <link rel="stylesheet" href="hospital.css">
+</head>
+<body>
+  <main>
+    <div class="toolbar"><strong>ER-Sync</strong><form id="login"><label>병원 접근 키 <input id="accessKey" type="password" required autocomplete="off"></label> <button>접속</button></form><button id="logout" hidden>로그아웃</button></div>
+    <p id="notice" role="status"></p>
+    <p id="closedCall" role="status" hidden></p>
+    <section class="panel">
+      <header><h1><span id="activeHospital"></span>실시간 호출 현황</h1><button id="alerts" aria-pressed="true">알림 ON</button></header>
+      <div class="content">
+        <div class="stats"><div>진행 중<b id="waiting">0건</b></div><div>오늘 수락<b id="accepted">0건</b></div><div>평균 응답<b id="average">—</b></div></div>
+        <div id="queue" aria-label="대기 호출"></div>
+      </div>
+    </section>
+    <section class="panel"><header><h2>호출 이력</h2><time id="date"></time></header><div class="content" id="history"></div></section>
+  </main>
+  <dialog id="popup" aria-labelledby="patient">
+    <header><strong id="hospitalName"></strong><button id="close" aria-label="닫기">닫기</button></header>
+    <p id="status"></p>
+    <article>
+      <div class="patient"><h2 id="patient"></h2><span id="severity"></span></div>
+      <dl id="fields"></dl><p id="facilities"></p><p id="notes"></p><p id="feedback" role="status"></p>
+      <footer id="actions"><button data-decision="ACCEPT">수용 가능</button><button data-decision="DECLINE">수용 불가</button></footer>
+    </article>
+  </dialog>
+  <script type="module" src="hospital.js"></script>
+</body>
+</html>
