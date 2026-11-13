@@ -19,10 +19,16 @@ function show(record) {
   const r = record.report;
   $('hospitalName').textContent = select.selectedOptions[0].text;
   $('patient').textContent = [r.patient,r.symptoms].filter(Boolean).join(' · ') || '환자 보고서';
-  $('status').textContent = labels[record.status];
+  $('status').className = record.status;
+  $('status').textContent = record.status === 'PENDING' ? '응급 환자 호출 · KTAS ' + r.ktas : labels[record.status];
+  $('severity').textContent = 'KTAS ' + r.ktas;
+  $('notes').textContent = '대원 메모  ' + (r.notes || '없음');
+  $('facilities').textContent = r.requiredFacilities?.length ? '필수 시설  ' + r.requiredFacilities.join(', ') : '';
   $('fields').replaceChildren();
-  for (const [name,value] of Object.entries({'KTAS':r.ktas,'혈압':r.bp,'의식':r.consciousness,'도착 예상':record.eta == null ? '' : record.eta+'분','필수 시설':r.requiredFacilities?.join(', '),'특이사항':r.notes})) {
-    $('fields').append(element('dt',name),element('dd',value || '—'));
+  for (const [name,value] of Object.entries({'혈압':r.bp,'의식':r.consciousness,'발현':r.onset,'ETA':record.eta == null ? '' : record.eta+'분'})) {
+    const tile = document.createElement('div');
+    tile.append(element('dt',name),element('dd',value || '—'));
+    $('fields').append(tile);
   }
   $('actions').hidden = record.status !== 'PENDING';
   for(const b of $('actions').children) b.disabled = busy;
@@ -36,7 +42,7 @@ function renderList(id,list,empty) {
     const button = document.createElement('button');
     button.className = 'row';
     const info = element('span',[r.report.patient,r.report.symptoms].filter(Boolean).join(' · ') || '환자 보고서');
-    info.append(element('small',(r.retryOf?'재요청':'최초 호출')+' · KTAS '+r.report.ktas+' · '+new Date(r.startedAt).toLocaleString('ko-KR')));
+    info.append(element('small',(r.retryOf?'재요청':'최초 호출')+' · KTAS '+r.report.ktas+(id==='queue' ? ' · ETA '+(r.eta == null ? '—' : r.eta+'분') : ' · '+new Date(r.startedAt).toLocaleString('ko-KR'))));
     const badge = element('span',labels[r.status]);
     badge.className = 'badge '+r.status;
     button.append(info,badge);
@@ -45,6 +51,8 @@ function renderList(id,list,empty) {
   }
 }
 function render() {
+  $('activeHospital').textContent = select.value ? select.selectedOptions[0].text + ' · ' : '';
+  $('date').textContent = new Date().toLocaleDateString('sv-SE');
   const pending = rows.filter(r=>r.status==='PENDING');
   const today = new Date().toDateString();
   const responses = rows.filter(r=>r.respondedAt && new Date(r.respondedAt).toDateString()===today);
