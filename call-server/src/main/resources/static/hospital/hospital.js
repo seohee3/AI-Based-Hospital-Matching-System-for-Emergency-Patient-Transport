@@ -80,8 +80,8 @@ async function refresh() {
     const result=await json('/api/hospitals/me/requests');
     if(revision!==version)return;
     if(firstSnapshot) {
-      // Existing requests stay in the queue. Only the latest call can alert on login.
-      const latest=result.reduce((last,r)=>!last || r.startedAt>last.startedAt ? r : last,null);
+      // The API sorts pending requests newest first. Terminal history must not suppress them.
+      const latest=result.find(r=>r.status==='PENDING');
       for(const r of result) if(r.status==='PENDING' && r.id!==latest?.id) seen.add(r.id);
       firstSnapshot=false;
     }

@@ -20,7 +20,7 @@ function callFetch(url, options = {}) {
 export function prepareCall(report, match) {
   return {
     key: Date.now() + '-' + Math.random().toString(36).slice(2),
-    body: { report, hospitals: match.hospitals, appliedRadiusKm: match.appliedRadiusKm },
+    body: { report, hospitals: match.hospitals, appliedRadiusKm: match.meta?.appliedRadiusKm ?? match.appliedRadiusKm },
     callId: null,
   };
 }

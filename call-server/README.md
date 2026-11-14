@@ -20,6 +20,18 @@ mvn spring-boot:run
 
 폰에서 A04와 연결할 때는 서버 시작 전에 `CALL_SERVER_ADDRESS`를 노트북의 Wi-Fi IPv4 주소로 지정한다. 앱 루트의 `.env`에는 `EXPO_PUBLIC_CALL_URL=http://<같은 IPv4>:8082/api/calls`를 넣고 Expo Go를 리로드한다. B의 후보 조회 주소는 기존 `EXPO_PUBLIC_MATCH_URL`을 사용한다. MySQL 연결은 노트북 내부에서만 이뤄진다.
 
+## 시연 노트북에서 병원 키 추가
+
+기존 시연 키 파일을 쓰는 서버는 시작할 때 `CALL_HOSPITAL_KEY_FILE`을 해당 파일의 절대 경로로 설정한다. 위의 대원 키에는 같은 파일 둘째 줄의 기존 값을 사용한다. 파일은 시연자만 읽을 수 있는 폴더에 둔다. 파일 모드에서는 병원 인증 요청마다 해당 파일의 병원 목록을 읽는다. 파일을 지정하지 않은 서버는 기존 환경변수 방식을 사용한다.
+
+파일 모드에서는 C 서버가 약 3초 간격으로 MySQL에 저장된 호출 후보를 확인해 누락된 hpid만 자동 발급한다. 호출 후 키 파일을 다시 열어 새 병원 키를 확인한다. 즉시 수동 동기화가 필요할 때만 `call-server` 폴더의 PowerShell에서 다음 명령을 실행한다.
+
+```powershell
+.\sync-hospital-keys.ps1
+```
+
+이 노트북의 기본 키 파일은 `%LOCALAPPDATA%\ER-Sync\call-server-demo\access-keys\demo-keys.txt`이고 시연 MySQL 포트는 33307이다. 다른 환경은 `-KeyFile`, `-Port`, `-Database`, `-DbUser`와 환경변수 `CALL_DB_PASSWORD`를 지정한다. 명령은 호출 후보 테이블을 읽고 새 hpid만 파일에 추가한다. 출력에는 추가 건수만 표시한다. 새 키로 대시보드에 접속할 때 서버를 재시작할 필요가 없다.
+
 ## 호출 생성과 상세 조회
 
 서버가 실행 중일 때 같은 폴더의 두 번째 PowerShell에서 실행한다. 대원에게 별도로 전달한 접근 키를 입력한다.
