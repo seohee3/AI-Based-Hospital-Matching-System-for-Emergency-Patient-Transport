@@ -1,28 +1,42 @@
 # C 호출 서버
 
-Java 17, Maven, MySQL 8을 사용한다. 한 팀이 한 기기로 확인하는 로컬 시연용이며 기본 주소는 `127.0.0.1:8082`이다.
+구급대원 앱에서 보낸 호출과 병원별 응답을 MySQL에 저장하고, 병원 PC에 대시보드를 제공하는 Spring Boot 서버다. Java 17, Maven, MySQL 8을 사용한다.
 
-## 서버 실행
+## 시연 서버 실행 (Windows PowerShell)
 
-MySQL에 빈 데이터베이스와 전용 계정을 준비한다. 계정에는 해당 DB의 테이블 생성·참조·조회·입력·수정 권한이 필요하다. 서버 시작 시 `schema.sql`이 두 테이블을 생성한다. 기존 호출은 유지된다.
+MySQL에 `ersync_calls` 데이터베이스와 전용 계정을 준비한다. 계정에는 해당 DB의 테이블 생성·참조·조회·입력·수정 권한이 필요하다. 서버가 시작되면 `schema.sql`이 필요한 테이블을 생성한다.
 
-`call-server` 폴더에서 PowerShell을 열고 연결 정보와 접근 키를 지정한다. 아래 예시는 임시 키를 생성한다. 같은 계정으로 다시 접속하려면 기존 키를 다시 설정한다.
+`call-server` 폴더에서 다음 명령을 실행한다. 처음 사용하는 노트북에서는 사용자 전용 폴더에 키 파일을 만들고, 다음 실행부터는 같은 파일을 사용한다.
 
 ```powershell
+$keyDir = Join-Path $env:LOCALAPPDATA 'ER-Sync/call-server-demo/access-keys'
+$env:CALL_HOSPITAL_KEY_FILE = Join-Path $keyDir 'demo-keys.txt'
+if (!(Test-Path -LiteralPath $env:CALL_HOSPITAL_KEY_FILE)) {
+    New-Item -ItemType Directory -Force -Path $keyDir | Out-Null
+    $lines = @('구급대원 접근 키', [guid]::NewGuid().ToString('N'), '', '병원 이름 / 병원 ID / 병원 접근 키')
+    [IO.File]::WriteAllLines($env:CALL_HOSPITAL_KEY_FILE, $lines)
+}
+$env:CALL_AMBULANCE_KEY = [IO.File]::ReadAllLines($env:CALL_HOSPITAL_KEY_FILE)[1].Trim()
 $env:CALL_DB_URL = 'jdbc:mysql://127.0.0.1:3306/ersync_calls'
 $env:CALL_DB_USER = 'ersync_calls'
-$env:CALL_DB_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host 'MySQL password' -AsSecureString)).Password
-$env:CALL_AMBULANCE_KEY = [guid]::NewGuid().ToString('N')
-$hospitalKey = [guid]::NewGuid().ToString('N')
-$env:CALL_HOSPITAL_KEYS = "A2100020=$hospitalKey"
+$env:CALL_DB_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host 'MySQL 비밀번호' -AsSecureString)).Password
+$env:CALL_SERVER_ADDRESS = Read-Host '노트북 Wi-Fi IPv4 주소'
 mvn spring-boot:run
 ```
 
-폰에서 A04와 연결할 때는 서버 시작 전에 `CALL_SERVER_ADDRESS`를 노트북의 Wi-Fi IPv4 주소로 지정한다. 앱 루트의 `.env`에는 `EXPO_PUBLIC_CALL_URL=http://<같은 IPv4>:8082/api/calls`를 넣고 Expo Go를 리로드한다. B의 후보 조회 주소는 기존 `EXPO_PUBLIC_MATCH_URL`을 사용한다. MySQL 연결은 노트북 내부에서만 이뤄진다.
+위 예시는 MySQL 포트 `3306`, 호출 서버 포트 `8082`를 사용한다. 기존 시연 노트북의 MySQL은 `33307`이므로 DB 주소의 포트를 바꾼다. 호출 서버가 `8083`을 사용하면 실행 전에 `$env:CALL_SERVER_PORT = '8083'`을 지정한다. 앱의 `.env`에도 같은 IP와 호출 서버 포트로 `EXPO_PUBLIC_CALL_URL=http://<노트북 IPv4>:<호출 서버 포트>/api/calls`를 설정하고 Expo를 다시 실행한다.
+
+## 새 병원으로 첫 호출 보내기
+
+1. 키 파일 둘째 줄의 대원 키로 앱에 로그인하고 A04에서 **병원 매칭 및 호출**을 누른다.
+2. 서버는 약 3초마다 MySQL의 호출 후보를 확인한다. 처음 등장한 병원 ID(`hpid`)에만 키를 발급한다.
+3. 노트북에서 `%LOCALAPPDATA%\ER-Sync\call-server-demo\access-keys\demo-keys.txt`를 다시 연다. 후보 병원의 키로 대시보드에 로그인하면 앞서 보낸 대기 호출을 확인할 수 있다.
+
+즉시 동기화하려면 별도 PowerShell에서 `.\sync-hospital-keys.ps1 -Port 3306`을 실행한다. 실제 MySQL 포트와 DB 접속 정보를 사용한다. 키 파일 경로가 다르면 `-KeyFile`로 지정한다. 자동 발급을 사용하려면 서버에 `CALL_HOSPITAL_KEY_FILE`이 설정되어 있어야 한다.
 
 ## 호출 생성과 상세 조회
 
-서버가 실행 중일 때 같은 폴더의 두 번째 PowerShell에서 실행한다. 대원에게 별도로 전달한 접근 키를 입력한다.
+서버가 실행 중일 때 같은 폴더의 두 번째 PowerShell에서 실행한다. 아래 주소는 서버에 설정한 IP와 포트로 바꾼다. 대원에게 별도로 전달한 접근 키를 입력한다.
 
 ```powershell
 $key = [guid]::NewGuid().ToString()
@@ -44,6 +58,6 @@ Invoke-RestMethod "http://127.0.0.1:8082/api/calls/$($call.callId)" -Headers $he
 
 ## 병원 PC 시연 (H02~H05)
 
-C 서버 실행 후 PC에서 `http://<CALL_SERVER_ADDRESS>:8082/hospital/index.html`을 열고 병원 키로 접속한다. 앱 로그인 화면에는 대원 키를 입력한다. 병원 키는 실제 후보 병원 hpid별로 하나씩 발급해 서버에 `hpid1=키1,hpid2=키2` 형태로 설정한다. 키는 각각 별도로 전달하고 서버 재시작 시 교체할 수 있다. 키를 Git이나 Expo 공개 환경변수에 넣지 않는다.
+C 서버 실행 후 PC에서 `http://<CALL_SERVER_ADDRESS>:8082/hospital/index.html`을 열고 병원 키로 접속한다. 앱 로그인 화면에는 대원 키를 입력한다. 각 병원에는 해당 병원의 키만 전달한다. 환경변수로 병원 키를 직접 관리하는 경우에는 키 파일 경로를 설정하지 않고 `CALL_HOSPITAL_KEYS`를 `hpid1=키1,hpid2=키2` 형태로 지정한다. 키를 Git이나 Expo 공개 환경변수에 넣지 않는다.
 
 수동 시연은 앱의 `EXPO_PUBLIC_HOSPITAL_MODE=manual`로 설정한다. 두 브라우저 탭에 서로 다른 후보 병원 키를 입력하면 최초 수락과 타 병원 팝업 종료를 확인할 수 있다. 자동 시연은 앱의 `demo`와 C 서버의 `CALL_DEMO_ENABLED=true`를 함께 설정해야 한다. 병원 응답을 직접 받는 환경에서는 서버의 자동 시연 권한을 끈다. 핫스팟 HTTP는 가상 데이터 로컬 시연용이며 외부 배포 시 HTTPS가 필요하다.
